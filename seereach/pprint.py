@@ -200,11 +200,11 @@ class HLTargetPrinter:
     def visit_block(self, node: Block, indent="") -> str:
         """block is printed as a bunch of indented lines"""
         # print statements
-        statements = f";\n{indent}".join(
-            [self.visit(s, indent) for s in node.expressions]
+        statements = f";\n{indent + '    '}".join(
+            [self.visit(s, indent + "    ") for s in node.expressions]
         )
 
-        return "{\n" + f"{indent}{statements}" + f"\n{indent}" + "}"
+        return "{\n" + f"{indent + '    '}{statements}" + f"\n{indent}" + "}"
 
     def visit_name(self, node: Name, indent="") -> str:
         return f"{node}"

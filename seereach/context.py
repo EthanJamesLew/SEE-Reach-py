@@ -65,7 +65,7 @@ class Context:
             # assignments update the symbol table in the current context and return nothing
             values = self.execute_sub(self.expression.expression, program)
             self.symbol_table[self.expression.variable.name] = values
-            return []
+            return values
         elif isinstance(self.expression, Block):
             # a expressions in a block share the same context, executed in order
             sub_context = Context(self.expression, self, self.path_condition)
@@ -134,19 +134,24 @@ class Context:
                 if r.is_return
             ]
         elif isinstance(self.expression, BinaryOp):
-            # TODO: this is wrong
-            left_value = self.execute_sub(self.expression.left, program)[0]
-            right_value = self.execute_sub(self.expression.right, program)[0]
-            return [
-                EvalResult(
-                    self.execute_binary_op(
-                        self.expression.operator,
-                        left_value.expr_eval,
-                        right_value.expr_eval,
-                    ),
-                    path_condition=self.path_condition,
-                ).flatten()
-            ]
+            rets = []
+            left_values = self.execute_sub(self.expression.left, program)
+            right_values = self.execute_sub(self.expression.right, program)
+            for left_value in left_values:
+                for right_value in right_values:
+                    rets.append(
+                        EvalResult(
+                            self.execute_binary_op(
+                                self.expression.operator,
+                                left_value.expr_eval,
+                                right_value.expr_eval,
+                            ),
+                            path_condition=self.path_condition
+                            + left_value.path_condition
+                            + right_value.path_condition,
+                        ).flatten()
+                    )
+            return rets
         elif isinstance(self.expression, UnaryOp):
             value = self.execute_sub(self.expression.expression, program)[0]
             return [self.execute_unary_op(self.expression.operator, value)]
