@@ -91,11 +91,23 @@ print(r)
 # pretty print the program
 from seereach.pprint import HLTargetPrinter, EvalResultPrinter
 from seereach.z3convert import Z3SatConverter
+from seereach.sympyconvert import SymPyConverter
+import sympy as sp
+
+def simplify_evalresult(result: EvalResult):
+    from functools import reduce
+    spc = SymPyConverter()
+    # and all the path conditions together
+    condition = reduce(lambda x, y: SBinaryOp(x, Operator.AND, y), result.path_condition)
+    return EvalResult(
+        spc.simplify(result.expr_eval),
+        [spc.simplify(condition)], 
+        result.is_return,
+    )
 
 print(HLTargetPrinter().visit(program))
-
 # Execute the program
 r = initial_context.execute(program)
 for result in r:
-    print(EvalResultPrinter().print(result))
-    print(Z3SatConverter().add_result(result).is_sat)
+    print(EvalResultPrinter().print(simplify_evalresult(result)))
+    #print(Z3SatConverter().add_result(result).is_sat)

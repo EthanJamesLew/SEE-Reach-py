@@ -22,10 +22,26 @@ class Context:
         self.path_condition = [] if path_condition is None else path_condition.copy()
         self.branches = []
 
+
+    def _literal_to_sym(self, literal: Literal):
+        if literal.type == Type.REAL:
+            return SReal(literal.value)
+        elif literal.type == Type.INTEGER:
+            return SInteger(literal.value)
+        elif literal.type == Type.BOOLEAN:
+            return SBoolean(literal.value)
+        elif literal.type == Type.TUPLE:
+            return STuple([self._literal_to_sym(e) for e in literal.value])
+        raise ValueError(f"Invalid literal type: {literal.type}")
+
     def execute(self, program: Program) -> List[EvalResult]:
         if isinstance(self.expression, Literal):
-            return [EvalResult(self.expression.value, self.path_condition).flatten()]
-
+            # convert the literal to a symbolic expression
+            if self.expression.value.type == Type.TUPLE:
+                # TODO: this is wrong
+                return [EvalResult(STuple([self._literal_to_sym(e.value) for e in self.expression.value.value]), self.path_condition).flatten()]
+            else:
+                return [EvalResult(self._literal_to_sym(self.expression.value), self.path_condition).flatten()]
         elif isinstance(self.expression, SVariable):
             return [EvalResult(self.expression, self.path_condition).flatten()]
 

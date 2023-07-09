@@ -2,7 +2,7 @@
 from typing import Any, Dict, List
 from seereach.lang import Name, Operator, Type
 from seereach.result import EvalResult
-from seereach.symlang import SBinaryOp, SUnaryOp, SVariable, SymLang
+from seereach.symlang import SBinaryOp, SUnaryOp, SVariable, SymLang, SBoolean, SReal, SInteger, STuple
 from z3 import *
 
 
@@ -93,4 +93,12 @@ class Z3SatConverter:
                 return z3.Not(self.convert(expr.expression))
             else:
                 raise ValueError(f"Invalid operator: {expr.operator}")
+        elif isinstance(expr, SReal):
+            return expr.value
+        elif isinstance(expr, SInteger):
+            return expr.value
+        elif isinstance(expr, SBoolean):
+            return expr.value
+        elif isinstance(expr, STuple):
+            return z3.Tuple(*[self.convert(e) for e in expr.elements])
         return expr
