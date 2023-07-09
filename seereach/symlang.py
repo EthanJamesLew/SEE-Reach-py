@@ -50,7 +50,22 @@ class SBinaryOp(SymVal):
         self.right = right
 
     def __repr__(self) -> str:
-        return f"SBinaryOp({self.left}, {self.operator}, {self.right})"
+        # infix print
+        # lookup operator symbol
+        operator_symbol = {
+            Operator.ADD: "+",
+            Operator.SUB: "-",
+            Operator.MUL: "*",
+            Operator.DIV: "/",
+            Operator.EQUAL: "==",
+            Operator.LESS: "<",
+            Operator.LESS_EQUAL: "<=",
+            Operator.GREATER: ">",
+            Operator.GREATER_EQUAL: ">=",
+            Operator.AND: "&&",
+            Operator.OR: "||",
+        }[self.operator]
+        return f"({self.left} {operator_symbol} {self.right})" 
 
 class SUnaryOp(SymVal):
     def __init__(self, operator: Operator, expression: SymVal):

@@ -8,7 +8,14 @@ y = TypedVariable(Name('y'), Type.INTEGER)
 # Function definition
 function_body = Return(
     Block([
-        Assignment(TypedVariable(Name('local'), Type.INTEGER), Literal(Value(Type.INTEGER, 0))),
+        Assignment(
+            TypedVariable(Name('local'), Type.INTEGER), 
+            BinaryOp(
+                Variable(Name('x')), 
+                Operator.ADD, 
+                FunctionCall(Name('bar'), [Variable(Name('x'))]) 
+            )
+        ),
         Conditional(
             BinaryOp(Variable(Name('x')), Operator.LESS, Literal(Value(Type.INTEGER, 0))),
             Conditional(
@@ -27,9 +34,10 @@ function_body = Return(
 )
 
 function = Function(Name('foo'), [x], Type.INTEGER, function_body)
+function2 = Function(Name('bar'), [x], Type.INTEGER, Return(Literal(Value(Type.INTEGER, 10))))
 
 # Program
-program = Program({function.name: function}, function.name)
+program = Program({function.name: function, function2.name: function2}, function.name)
 
 # Create the initial context with a symbolic variable 'x'
 initial_context = Context(FunctionCall(Name('foo'), [SVariable(Name('x'))]))

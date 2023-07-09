@@ -30,7 +30,31 @@ class SymbolicValue:
 
     def __repr__(self):
         return f"SymbolicValue({self.expression})"
+    
 
+class EvalResult:
+    def __init__(self, expr_eval, path_condition, is_return=False):
+        self.expr_eval = expr_eval
+        self.path_condition = path_condition
+        self.is_return = is_return
+
+    def flatten(self):
+        # if expr_eval is a EvalResult, flatten it
+        if isinstance(self.expr_eval, EvalResult):
+            er =  EvalResult(self.expr_eval.expr_eval, self.path_condition + self.expr_eval.path_condition) 
+            return er.flatten()
+        else:
+            return self
+
+    def __repr__(self):
+        lines = []
+        lines.append(f"Eval Result:")
+        lines.append(f"{self.expr_eval}")
+        lines.append(f"Path Condition:")
+        for pc in self.path_condition:
+            lines.append(f"\t{pc}")
+        lines.append(f"Is Return: {self.is_return}")
+        return "\n".join(lines)
 
 class Context:
     def __init__(self, expression: Expression, parent=None, path_condition=None):
@@ -40,28 +64,27 @@ class Context:
         self.path_condition = [] if path_condition is None else path_condition.copy()
         self.branches = []
 
-    def execute(self, program: Program):
+    def execute(self, program: Program) -> List[EvalResult]:
         if isinstance(self.expression, Literal):
-            return [self.expression.value]
+            return [EvalResult(self.expression.value, self.path_condition).flatten()]
         elif isinstance(self.expression, SVariable):
-            return [self.expression]
+            return [EvalResult(self.expression, self.path_condition).flatten()]
         elif isinstance(self.expression, Variable):
-            return [self.symbol_table[self.expression.name]]
+            return [EvalResult(self.symbol_table[self.expression.name], self.path_condition).flatten()]
         elif isinstance(self.expression, Assignment):
-            value = self.execute_sub(self.expression.expression, program)
-            # TODO: this is wrong
-            self.symbol_table[self.expression.variable.name] = value[0]
-            return [value]
+            values = self.execute_sub(self.expression.expression, program)
+            self.symbol_table[self.expression.variable.name] = values[0].expr_eval
+            return []
         elif isinstance(self.expression, Block):
             # create a sub context
             sub_context = Context(self.expression, self, self.path_condition)
             for expression in self.expression.expressions:
                 sub_context.expression = expression
-                ret = sub_context.execute(program)
-                # if expression if return, return the value
-                if isinstance(expression, Return):
-                    return [ret]
-            return [ret]
+                rets = sub_context.execute(program)
+                for ret in rets:
+                    if isinstance(ret.expr_eval, Return):
+                        return [ret]
+            return rets
         elif isinstance(self.expression, Conditional):
             condition_values = self.execute_sub(self.expression.condition, program)
 
@@ -72,12 +95,16 @@ class Context:
 
                 self.branches.append((condition_value, true_context, false_context))
 
-                if isinstance(condition_value, SymVal):
+                if isinstance(condition_value.expr_eval, SymVal):
                     # If condition involves a symbolic value, execute both branches
-                    rets += true_context.execute(program) + false_context.execute(program)
+                    # add the true path conditions to the tc
+                    tcs = [EvalResult(tc.expr_eval, tc.path_condition + [condition_value.expr_eval]) for tc in true_context.execute(program)]
+                    # add the false path conditions to the fc
+                    fcs = [EvalResult(fc.expr_eval, fc.path_condition + [SUnaryOp(Operator.NOT, condition_value.expr_eval)]) for fc in false_context.execute(program)]
+                    rets += tcs + fcs
                 else:
                     # If condition is concrete, execute appropriate branch
-                    branch_context = true_context if condition_value.value else false_context
+                    branch_context = true_context if condition_value.expr_eval.value else false_context
                     rets += branch_context.execute(program)
             return rets
         
@@ -85,25 +112,28 @@ class Context:
             function = program.functions[self.expression.function_name]
             function_context = Context(function.body, path_condition=self.path_condition)
             for arg, param in zip(self.expression.arguments, function.parameters):
-                function_context.symbol_table[param.name] = self.execute_sub(arg, program)[0]
+                function_context.symbol_table[param.name] = self.execute_sub(arg, program)[0].expr_eval
 
             results = function_context.execute(program)
             # Look for the Return statement in the results
-            for result in reversed(results):
-                if isinstance(result, Return):
-                    return [result.expression]
-            
-            # No Return statement found, return an empty list
-            return []
+            return [r for r in reversed(results) if r.is_return] 
         elif isinstance(self.expression, BinaryOp):
+            # TODO: this is wrong
             left_value = self.execute_sub(self.expression.left, program)[0]
             right_value = self.execute_sub(self.expression.right, program)[0]
-            return [self.execute_binary_op(self.expression.operator, left_value, right_value)]
+            return [
+                EvalResult(
+                self.execute_binary_op(self.expression.operator, 
+                                       left_value.expr_eval, 
+                                       right_value.expr_eval
+                                       ), path_condition=self.path_condition
+                                       ).flatten()]
         elif isinstance(self.expression, UnaryOp):
             value = self.execute_sub(self.expression.expression, program)[0]
             return [self.execute_unary_op(self.expression.operator, value)]
         elif isinstance(self.expression, Return):
-            return [Return(self.execute_sub(self.expression.expression, program))]
+            rets =  self.execute_sub(self.expression.expression, program)
+            return [EvalResult(ret.expr_eval, ret.path_condition, is_return=True) for ret in rets]
         else:
             raise ValueError(f'Invalid expression: {self.expression}') 
 

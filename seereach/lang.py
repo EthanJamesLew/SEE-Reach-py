@@ -31,7 +31,7 @@ class Value:
         self.value = value
     
     def __repr__(self) -> str:
-        return f"Value({self.type}, {self.value})"
+        return f"{self.value}"
 
 class Expression:
     pass
