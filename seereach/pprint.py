@@ -19,10 +19,20 @@ def lookup_binop(operator: Operator) -> str:
     }.get(operator, operator)
 
 
-def lookup_unop(operator: Operator) -> str:
-    return {
+def lookup_unop(operator: Operator, inner) -> str:
+    prefix = {
         Operator.NOT: "!",
-    }.get(operator, operator)
+    }
+
+    funcs = {
+        Operator.SIN: "sin",
+    }
+
+    if operator in prefix:
+        return f"{prefix[operator]}{inner}"
+    if operator in funcs:
+        return f"{funcs[operator]}({inner})"
+    return f"{operator} {inner}"
 
 
 def lookup_type(value_type: Type) -> str:
@@ -53,6 +63,8 @@ class SymLangPrinter:
             return self.visit_sbinaryop(node)
         elif isinstance(node, SUnaryOp):
             return self.visit_sunaryop(node)
+        elif isinstance(node, STuple):
+            return self.visit_stuple(node)
         else:
             return f"{node}"
 
@@ -76,8 +88,11 @@ class SymLangPrinter:
         return f"({self.visit(node.left)} {operator_symbol} {self.visit(node.right)})"
 
     def visit_sunaryop(self, node: SUnaryOp) -> str:
-        operator_symbol = lookup_unop(node.operator)
-        return f"({operator_symbol}{self.visit(node.expression)})"
+        operator_symbol = lookup_unop(node.operator, self.visit(node.expression))
+        return f"({operator_symbol})"
+
+    def visit_stuple(self, node: STuple) -> str:
+        return f"({', '.join([self.visit(e) for e in node.elements])})"
 
 
 class HLTargetPrinter:
@@ -111,6 +126,8 @@ class HLTargetPrinter:
             return self.visit_conditional(node, indent)
         elif isinstance(node, FunctionCall):
             return self.visit_functioncall(node, indent)
+        elif isinstance(node, TupleExpression):
+            return self.visit_tupleexpression(node, indent)
         else:
             raise NotImplementedError(
                 f"Unknown node type: {node}({node.__class__.__name__})"
@@ -153,7 +170,7 @@ class HLTargetPrinter:
         return f"{self.visit(node.left, '')} {lookup_binop(node.operator)} {self.visit(node.right, '')}"
 
     def visit_unaryop(self, node: UnaryOp, indent="") -> str:
-        return f"{lookup_unop(node.operator)} {self.visit(node.expression, '')}"
+        return f"{lookup_unop(node.operator, self.visit(node.expression, ''))}"
 
     def visit_return(self, node: Return, indent="") -> str:
         return f"return {self.visit(node.expression, indent + '    ')}"
@@ -215,6 +232,9 @@ class HLTargetPrinter:
     def visit_assignment(self, node: Assignment, indent="") -> str:
         return f"{self.visit(node.variable)} = {self.visit(node.expression)}"
 
+    def visit_tupleexpression(self, node: TupleExpression, indent="") -> str:
+        return f"({', '.join([self.visit(e) for e in node.elements])})"
+
 
 class EvalResultPrinter:
     def print(self, node: "EvalResult") -> str:
@@ -236,6 +256,6 @@ class EvalResultPrinter:
 
         return (
             f"===\nExpr:\n    {expr}\nPath Condition(s):\n    "
-            + "\n    ".join(path_conditions)
+            + ("\n    ".join(path_conditions) if len(path_conditions) > 0 else "<NONE>")
             + "\n==="
         )

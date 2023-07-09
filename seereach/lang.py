@@ -29,6 +29,7 @@ class Operator(
     AND = "And"
     OR = "Or"
     NOT = "Not"
+    SIN = "Sin"
 
 
 class Type(Enum):

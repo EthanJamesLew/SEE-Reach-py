@@ -36,9 +36,10 @@ class SBoolean(SymLang):
 
 
 class SVariable(SymLang):
-    def __init__(self, name: Name):
+    def __init__(self, name: Name, variable_type):
         self.name = name
         self.value = self
+        self.variable_type = variable_type
 
     def __repr__(self) -> str:
         return f"SVariable({self.name})"

@@ -1,35 +1,8 @@
 """Symbolic Contexts for SEE-Reach"""
 from seereach.lang import *
+from seereach.result import EvalResult
 from seereach.symlang import *
-
-
-class EvalResult:
-    """EvalResult is *path* the return of evaluating an expression, meaning that branching expressions can return a list of EvalResults's"""
-
-    def __init__(self, expr_eval, path_condition, is_return=False):
-        """
-        :param expr_eval: the result of evaluating the expression
-        :param path_condition: the path condition that led to this result
-        :param is_return: whether this result is a return statement (is that a good idea?)
-        """
-        self.expr_eval = expr_eval
-        self.path_condition = path_condition
-        self.is_return = is_return
-
-    def flatten(self):
-        """Flatten the path condition into a single symbolic expression"""
-        # if expr_eval is a EvalResult, flatten it
-        if isinstance(self.expr_eval, EvalResult):
-            er = EvalResult(
-                self.expr_eval.expr_eval,
-                self.path_condition + self.expr_eval.path_condition,
-            )
-            return er.flatten()
-        else:
-            return self
-
-    def __repr__(self):
-        return f"EvalResult({self.expr_eval}, {self.path_condition}, {self.is_return})"
+from seereach.z3convert import Z3SatConverter
 
 
 class Context:
@@ -52,8 +25,10 @@ class Context:
     def execute(self, program: Program) -> List[EvalResult]:
         if isinstance(self.expression, Literal):
             return [EvalResult(self.expression.value, self.path_condition).flatten()]
+
         elif isinstance(self.expression, SVariable):
             return [EvalResult(self.expression, self.path_condition).flatten()]
+
         elif isinstance(self.expression, Variable):
             return [
                 EvalResult(
@@ -61,11 +36,13 @@ class Context:
                 ).flatten()
                 for evalr in self.symbol_table[self.expression.name]
             ]
+
         elif isinstance(self.expression, Assignment):
             # assignments update the symbol table in the current context and return nothing
             values = self.execute_sub(self.expression.expression, program)
             self.symbol_table[self.expression.variable.name] = values
             return values
+
         elif isinstance(self.expression, Block):
             # a expressions in a block share the same context, executed in order
             sub_context = Context(self.expression, self, self.path_condition)
@@ -76,6 +53,7 @@ class Context:
                     if isinstance(ret.expr_eval, Return):
                         return [ret]
             return rets
+
         elif isinstance(self.expression, Conditional):
             condition_values = self.execute_sub(self.expression.condition, program)
 
@@ -93,6 +71,7 @@ class Context:
                         EvalResult(
                             tc.expr_eval,
                             tc.path_condition + [condition_value.expr_eval],
+                            is_return=tc.is_return,
                         )
                         for tc in true_context.execute(program)
                     ]
@@ -102,10 +81,14 @@ class Context:
                             fc.expr_eval,
                             fc.path_condition
                             + [SUnaryOp(Operator.NOT, condition_value.expr_eval)],
+                            is_return=fc.is_return,
                         )
                         for fc in false_context.execute(program)
                     ]
-                    rets += tcs + fcs
+                    for r in tcs + fcs:
+                        z3c = Z3SatConverter().add_result(r)
+                        if z3c.is_sat:
+                            rets += [r]
                 else:
                     # If condition is concrete, execute appropriate branch
                     branch_context = (
@@ -133,6 +116,7 @@ class Context:
                 for r in reversed(results)
                 if r.is_return
             ]
+
         elif isinstance(self.expression, BinaryOp):
             rets = []
             left_values = self.execute_sub(self.expression.left, program)
@@ -152,15 +136,50 @@ class Context:
                         ).flatten()
                     )
             return rets
+
         elif isinstance(self.expression, UnaryOp):
-            value = self.execute_sub(self.expression.expression, program)[0]
-            return [self.execute_unary_op(self.expression.operator, value)]
+            rets = []
+            values = self.execute_sub(self.expression.expression, program)
+            for value in values:
+                rets.append(
+                    EvalResult(
+                        self.execute_unary_op(
+                            self.expression.operator, value.expr_eval
+                        ),
+                        path_condition=self.path_condition + value.path_condition,
+                    ).flatten()
+                )
+            return rets
+
         elif isinstance(self.expression, Return):
             rets = self.execute_sub(self.expression.expression, program)
             return [
                 EvalResult(ret.expr_eval, ret.path_condition, is_return=True)
                 for ret in rets
             ]
+
+        elif isinstance(self.expression, TupleExpression):
+            # return cartesian product of the elements
+            irets = []
+            for element in self.expression.elements:
+                irets.append(self.execute_sub(element, program))
+
+            # iter prod the rets
+            import itertools
+
+            rets = []
+            for r in itertools.product(*irets):
+                # create a new tuple
+                te = STuple([e.expr_eval for e in r])
+                er = EvalResult(
+                    te,
+                    list(
+                        itertools.chain.from_iterable([ri.path_condition for ri in r])
+                    ),
+                    is_return=False,
+                )
+                rets.append(er)
+            return rets
         else:
             raise ValueError(f"Invalid expression: {self.expression}")
 
@@ -204,10 +223,11 @@ class Context:
                     raise ValueError(f"Invalid operator: {operator}")
 
     def execute_unary_op(self, operator: Operator, value: SymLang):
+        return SUnaryOp(operator, value)
         if isinstance(value, SymbolicBool):
             return UnaryOp(operator, value)
         else:
-            raise NotImplementedError
+            raise NotImplementedError(f"Unary operator {operator} not implemented")
 
     def execute_sub(self, expression: Expression, program: Program):
         sub_context = Context(expression, self, self.path_condition)
