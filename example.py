@@ -46,6 +46,13 @@ initial_context = Context(FunctionCall(Name('foo'), [SVariable(Name('x'))]))
 r = initial_context.execute(program)
 print(r)
 
+# pretty print foo
+from seereach.pprint import HLTargetPrinter, EvalResultPrinter
+
+print(HLTargetPrinter().visit(program))
+for result in r:
+    print(EvalResultPrinter().print(result))
+
 # Print all execution paths
 # for path in initial_context.get_paths():
 #    print(path)
