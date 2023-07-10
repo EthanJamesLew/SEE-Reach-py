@@ -66,19 +66,19 @@ Produces the following model for $k_p=1.0, k_d=0.2$,
 $0.2 \omega + 1.0 \theta > 5.0$,
 
 $$
-\left[\begin{matrix}\theta\\\omega\end{matrix}\right]\rightarrow\left[\begin{matrix}\omega\\- 7.405 \sin{\left(\theta \right)}\end{matrix}\right]
+\left[\begin{matrix}\theta \\ \omega\end{matrix}\right]\rightarrow\left[\begin{matrix}\omega \\ -7.405 \sin{\left(\theta \right)}\end{matrix}\right]
 $$
 
 $0.2 \omega + 1.0 \theta < -5.0$,
 
 $$
-\left[\begin{matrix}\theta\\\omega\end{matrix}\right]\rightarrow\left[\begin{matrix}\omega\\- 2.405 \sin{\left(\theta \right)}\end{matrix}\right]
+\left[\begin{matrix}\theta \\ \omega\end{matrix}\right]\rightarrow\left[\begin{matrix}\omega \\ -2.405 \sin{\left(\theta \right)}\end{matrix}\right]
 $$
 
 $0.2 \omega + 1.0 \theta \geq -5.0 \wedge 0.2 \omega + 1.0 \theta \leq 5.0$,
 
 $$
-\left[\begin{matrix}\theta\\\omega\end{matrix}\right]\rightarrow\left[\begin{matrix}\omega\\\left(- 0.5 \theta - 4.905\right) \sin{\left(\theta \right)}\end{matrix}\right]
+\left[\begin{matrix} \theta \\ \omega \end{matrix} \right] \rightarrow \left[ \begin{matrix} \omega \\ \left(-0.5 \theta -4.905 \right) \sin{\left( \theta \right)}\end{matrix}\right]
 $$
 
 See the [notebook](./SEE-Reach.ipynb) for more. 
