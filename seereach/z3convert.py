@@ -2,7 +2,16 @@
 from typing import Any, Dict, List
 from seereach.lang import Name, Operator, Type
 from seereach.result import EvalResult
-from seereach.symlang import SBinaryOp, SUnaryOp, SVariable, SymLang, SBoolean, SReal, SInteger, STuple
+from seereach.symlang import (
+    SBinaryOp,
+    SUnaryOp,
+    SVariable,
+    SymLang,
+    SBoolean,
+    SReal,
+    SInteger,
+    STuple,
+)
 from z3 import *
 
 

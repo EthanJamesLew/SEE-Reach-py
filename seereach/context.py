@@ -22,7 +22,6 @@ class Context:
         self.path_condition = [] if path_condition is None else path_condition.copy()
         self.branches = []
 
-
     def _literal_to_sym(self, literal: Literal):
         if literal.type == Type.REAL:
             return SReal(literal.value)
@@ -39,9 +38,23 @@ class Context:
             # convert the literal to a symbolic expression
             if self.expression.value.type == Type.TUPLE:
                 # TODO: this is wrong
-                return [EvalResult(STuple([self._literal_to_sym(e.value) for e in self.expression.value.value]), self.path_condition).flatten()]
+                return [
+                    EvalResult(
+                        STuple(
+                            [
+                                self._literal_to_sym(e.value)
+                                for e in self.expression.value.value
+                            ]
+                        ),
+                        self.path_condition,
+                    ).flatten()
+                ]
             else:
-                return [EvalResult(self._literal_to_sym(self.expression.value), self.path_condition).flatten()]
+                return [
+                    EvalResult(
+                        self._literal_to_sym(self.expression.value), self.path_condition
+                    ).flatten()
+                ]
         elif isinstance(self.expression, SVariable):
             return [EvalResult(self.expression, self.path_condition).flatten()]
 

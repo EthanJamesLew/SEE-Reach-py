@@ -140,9 +140,9 @@ class HLTargetPrinter:
         functions = "\n".join([self.visit(f, "") for f in node.functions.values()])
 
         # print main
-        main = self.visit(node.start, "")
+        # main = self.visit(node.start, "")
 
-        return f"{indent}{functions}\n{indent}{main}"
+        return f"{indent}{functions}"
 
     def visit_function(self, node: Function, indent="") -> str:
         """function is printed like a rust function
