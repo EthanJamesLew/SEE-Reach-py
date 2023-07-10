@@ -35,9 +35,7 @@ class Z3SatConverter:
         return self
 
     def sat(self):
-        s = z3.Solver()
-        for condition in self.conditions:
-            s.add(condition)
+        s = self.z3_solver
         return s.check()
 
     @property
@@ -46,7 +44,15 @@ class Z3SatConverter:
 
     @property
     def is_unsat(self):
-        return z3.solve(*self.conditions) == z3.unsat
+        s = self.z3_solver
+        return  s.check() == z3.unsat
+    
+    @property
+    def z3_solver(self):
+        s = z3.Solver()
+        for condition in self.conditions:
+            s.add(condition)
+        return s
 
     def collect_variables(self, expr: SymLang):
         if isinstance(expr, SVariable):
