@@ -29,11 +29,17 @@ tokens = [
     "SIN",
     "COMMENT_SINGLELINE",
     "COMMENT_MULTILINE",
+    "LET",
 ]
 
 
 def t_ARROW(t):
     r"-\>"
+    return t
+
+
+def t_LET(t):
+    r"let"
     return t
 
 
@@ -274,8 +280,8 @@ def p_expressions(p):
 
 
 def p_assignment(p):
-    "expression : NAME COLON TYPE ASSIGN expression"
-    p[0] = Assignment(TypedVariable(Name(p[1]), p[3]), p[5])
+    "expression : LET NAME COLON TYPE ASSIGN expression"
+    p[0] = Assignment(TypedVariable(Name(p[2]), p[4]), p[6])
 
 
 def p_expression_conditional(p):
