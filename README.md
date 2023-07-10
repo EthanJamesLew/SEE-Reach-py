@@ -2,18 +2,17 @@
 
 ```mermaid
 graph LR
-    InputFile([Target Language]) --> Parser[HL Language Parser]
-    Parser --> SymbolicExecutor
+    InputFile([Target Language]) --> Compiler[HL Language Compiler]
+    Compiler --> SymbolicExecutor
     SymbolicExecutor --> HybridSystemModel([Hybrid System Model])
     HybridSystemModel --> ReachabilityAnalysis
     HybridSystemModel --> TestGenerator
        subgraph "SEE-Reach"
-        Parser
+        Compiler
         SymbolicExecutor
-        HybridSystemModel
     end
 ```
-*SEE-Reach Notional Diagram*
+*SEE-Reach Architecture*
 
 SEE-Reach is an experimental prototype of a symbolic execution engine (SEE) for closed-loop control software verification and analysis using reachability analysis (Reach). The tool is designed to extract models from control functions, determining whether a given state of a system is reachable from a start state under certain conditions. 
 
