@@ -143,6 +143,7 @@ class SymPyConverter:
                 Operator.SUB: lambda x, y: x - y,
                 Operator.MUL: lambda x, y: x * y,
                 Operator.DIV: lambda x, y: x / y,
+                Operator.POW: lambda x, y: x**y,
                 Operator.EQUAL: lambda x, y: Eq(x, y),
                 Operator.LESS: lambda x, y: Lt(x, y),
                 Operator.LESS_EQUAL: lambda x, y: Le(x, y),

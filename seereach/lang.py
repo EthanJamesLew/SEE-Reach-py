@@ -21,6 +21,7 @@ class Operator(
     SUB = "Sub"
     MUL = "Mul"
     DIV = "Div"
+    POW = "Pow"
     GREATER = "Greater"
     LESS = "Less"
     GREATER_EQUAL = "GreaterEqual"

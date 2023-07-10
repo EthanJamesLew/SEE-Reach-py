@@ -27,6 +27,8 @@ tokens = [
     "NEG_NUMBER",
     "NEG_INTEGER",
     "SIN",
+    "COMMENT_SINGLELINE",
+    "COMMENT_MULTILINE",
 ]
 
 
@@ -53,6 +55,17 @@ t_ignore = " \t"
 def t_newline(t):
     r"\n+"
     t.lexer.lineno += len(t.value)
+
+
+def t_COMMENT_SINGLELINE(t):
+    r"//.*"
+    pass  # No return value. Token discarded
+
+
+def t_COMMENT_MULTILINE(t):
+    r"/\*.*?\*/"
+    t.lexer.lineno += t.value.count("\n")  # To track line numbers
+    pass  # No return value. Token discarded
 
 
 def t_REAL(t):
@@ -295,6 +308,11 @@ def p_tuple_contents(p):
 def p_sin(p):
     "expression : SIN LPAREN expression RPAREN"
     p[0] = UnaryOp(Operator.SIN, p[3])
+
+
+def p_expression_paren(p):
+    "expression : LPAREN expression RPAREN"
+    p[0] = p[2]
 
 
 def p_error(p):
