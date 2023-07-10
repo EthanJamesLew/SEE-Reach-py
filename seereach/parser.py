@@ -24,6 +24,9 @@ tokens = [
     "ELSE",
     "ASSIGN",
     "MINUS",
+    "NEG_NUMBER",
+    "NEG_INTEGER",
+    "SIN",
 ]
 
 
@@ -32,7 +35,6 @@ def t_ARROW(t):
     return t
 
 
-t_EQUALS = r"=="
 t_ASSIGN = r"="
 t_LPAREN = r"\("
 t_RPAREN = r"\)"
@@ -46,15 +48,44 @@ t_NAME = r"[a-zA-Z_][a-zA-Z_0-9]*"
 # Ignore whitespace
 t_ignore = " \t"
 
+
 # Newline handling; track line numbers
 def t_newline(t):
     r"\n+"
     t.lexer.lineno += len(t.value)
 
 
-def t_MINUS(t):
-    r"-"
-    t.value = Operator.SUB
+def t_REAL(t):
+    r"\d+\.\d+"
+    t.value = Literal(Value(Type.REAL, float(t.value)))
+    return t
+
+
+def t_NEG_NUMBER(t):
+    r"-\d+(\.\d+)?"
+    t.value = Literal(
+        Value(Type.REAL, float(t.value))
+    )  # Convert the string representation into a float
+    return t
+
+
+def t_NEG_INTEGER(t):
+    r"-\d+"
+    t.value = Literal(
+        Value(Type.INTEGER, int(t.value))
+    )  # Convert the string representation into an int
+    return t
+
+
+def t_INTEGER(t):
+    r"\d+"
+    t.value = Literal(Value(Type.INTEGER, int(t.value)))
+    return t
+
+
+def t_SIN(t):
+    r"sin"
+    t.value = Operator.SIN
     return t
 
 
@@ -110,18 +141,6 @@ def t_BOOLEAN(t):
         t.value = Literal(Value(Type.BOOLEAN, False))
     else:
         raise ValueError(f"Unknown boolean {t.value}")
-    return t
-
-
-def t_REAL(t):
-    r"\d+\.\d+"
-    t.value = Literal(Value(Type.REAL, float(t.value)))
-    return t
-
-
-def t_INTEGER(t):
-    r"\d+"
-    t.value = Literal(Value(Type.INTEGER, int(t.value)))
     return t
 
 
@@ -220,7 +239,9 @@ def p_expression_name(p):
 def p_expression_number(p):
     """expression : REAL
     | INTEGER
-    | BOOLEAN"""
+    | BOOLEAN
+    | NEG_NUMBER
+    | NEG_INTEGER"""
     p[0] = p[1]
 
 
@@ -259,12 +280,21 @@ def p_expression_tuple(p):
 
 
 def p_tuple_contents(p):
-    """tuple_contents : expression
+    """tuple_contents : expression COMMA expression
     | tuple_contents COMMA expression"""
-    if len(p) == 2:
-        p[0] = [p[1]]
+    # if len(p) == 2:
+    #    p[0] = [p[1]]
+    # else:
+    #    p[0] = p[1] + [p[3]]
+    if len(p) == 4:
+        p[0] = [p[1], p[3]]
     else:
         p[0] = p[1] + [p[3]]
+
+
+def p_sin(p):
+    "expression : SIN LPAREN expression RPAREN"
+    p[0] = UnaryOp(Operator.SIN, p[3])
 
 
 def p_error(p):
