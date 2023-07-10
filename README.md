@@ -15,7 +15,7 @@ graph LR
 ```
 *SEE-Reach Notional Diagram*
 
-SEE-Reach is an experimental prototype for symbolic execution of a programming language for closed-loop control software verification and analysis. The tool is designed to extract models from control functions for reachability analysis, determining whether a given state of a system is reachable from a start state under certain conditions. 
+SEE-Reach is an experimental prototype of a symbolic execution engine (SEE) for closed-loop control software verification and analysis using reachability analysis (Reach). The tool is designed to extract models from control functions, determining whether a given state of a system is reachable from a start state under certain conditions. 
 
 The symbolic executor executes on a high-level target language that resembles a small subset of Rust (the intended implementation target), tailored specifically for defining and manipulating the hybrid systems. Important to note, the current version of SEE-Reach does not support loops. The target language has been kept minimalistic for the simplicity and to focus more on the proof of concept.
 
@@ -64,16 +64,19 @@ fn controller(x: real, omega: real, kp: real, kd: real) -> real {
 Produces the following model for $k_p=1.0, k_d=0.2$,
 
 $0.2 \omega + 1.0 \theta > 5.0$,
+
 $$
 \left[\begin{matrix}\theta\\\omega\end{matrix}\right]\rightarrow\left[\begin{matrix}\omega\\- 7.405 \sin{\left(\theta \right)}\end{matrix}\right]
 $$
-$0.2 \omega + 1.0 \theta < -5.0
-$,
+
+$0.2 \omega + 1.0 \theta < -5.0$,
+
 $$
 \left[\begin{matrix}\theta\\\omega\end{matrix}\right]\rightarrow\left[\begin{matrix}\omega\\- 2.405 \sin{\left(\theta \right)}\end{matrix}\right]
 $$
-$0.2 \omega + 1.0 \theta \geq -5.0 \wedge 0.2 \omega + 1.0 \theta \leq 5.0
-$,
+
+$0.2 \omega + 1.0 \theta \geq -5.0 \wedge 0.2 \omega + 1.0 \theta \leq 5.0$,
+
 $$
 \left[\begin{matrix}\theta\\\omega\end{matrix}\right]\rightarrow\left[\begin{matrix}\omega\\\left(- 0.5 \theta - 4.905\right) \sin{\left(\theta \right)}\end{matrix}\right]
 $$
@@ -95,5 +98,7 @@ jupyter notebook SEE-Reach.ipynb
 ## Current Limitations
 
 While SEE-Reach is a functional prototype, it's under ongoing development. The current version does not support loops and some other advanced features of Rust. Future versions may include a more comprehensive support for the language and additional symbolic execution strategies.
+
+This implementation is confusing and fragile---it will be reimplemented in a different language (e.g., Rust or OCaml) and with a better architecture.
 
 TODO: fill this out a bit more
